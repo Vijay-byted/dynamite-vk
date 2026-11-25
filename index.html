@@ -5,27 +5,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DYNAMITE VK - Study Portal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f4f6fb;color:#172033}
-header{background:#111827;color:white;padding:22px 16px;text-align:center}
-header h1{margin:0;color:#ff762e;font-size:30px}
-header p{margin:8px 0 0;color:#ddd}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f5fa;color:#172033}
+header{background:#111827;color:white;padding:22px 12px;text-align:center}
+header h1{margin:0;color:#ff762e}
 nav{background:#202b40;padding:13px;text-align:center}
 nav a{color:white;text-decoration:none;margin:0 12px}
-.hero{padding:35px 18px;text-align:center;background:linear-gradient(120deg,#111827,#263b5d);color:white}
-.hero h2{font-size:27px;margin:0 0 10px}
-.search{width:90%;max-width:480px;padding:14px;border:0;border-radius:8px;margin-top:15px}
-.container{max-width:1000px;margin:auto;padding:25px 16px}
-h2.section{margin-bottom:18px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:15px}
-.card{background:white;padding:20px;border-radius:12px;box-shadow:0 3px 12px #0000000c;text-align:center}
-.card h3{margin:8px 0;color:#172033}
-.card p{color:#687386;font-size:13px}
-button{background:#f97316;color:white;border:0;border-radius:7px;padding:10px 18px;cursor:pointer}
-.material{background:white;margin:12px 0;padding:16px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-.material p{margin:5px 0;color:#687386;font-size:13px}
+.hero{padding:30px 15px;text-align:center;background:linear-gradient(120deg,#111827,#263b5d);color:white}
+.container{max-width:950px;margin:auto;padding:20px 14px}
+input,select,textarea{width:100%;padding:12px;margin:7px 0 14px;border:1px solid #ccd2dc;border-radius:7px;font-size:15px}
+button{background:#f97316;color:white;border:0;border-radius:7px;padding:11px 17px;cursor:pointer;margin:4px}
+button:disabled{opacity:.5}
+.card,.panel{background:white;padding:17px;border-radius:12px;margin:12px 0;box-shadow:0 2px 10px #0000000b}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.material{background:white;padding:15px;border-radius:10px;margin:10px 0;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.small{font-size:13px;color:#687386}
+.hidden{display:none}
+h2{margin-top:25px}
+a{color:#2563eb}
 footer{background:#111827;color:white;text-align:center;padding:22px;margin-top:30px}
+#message{padding:10px;border-radius:7px;margin:10px 0}
 </style>
 </head>
 <body>
@@ -36,34 +37,84 @@ footer{background:#111827;color:white;text-align:center;padding:22px;margin-top:
 </header>
 
 <nav>
-<a href="#">Home</a>
+<a href="#home">Home</a>
 <a href="#subjects">Subjects</a>
 <a href="#materials">Study Material</a>
+<a href="#admin">Admin</a>
 </nav>
 
-<section class="hero">
+<section class="hero" id="home">
 <h2>Welcome to DYNAMITE VK</h2>
 <p>Your Study Partner for Success</p>
-<input class="search" id="search" placeholder="Search Subject or Topic..." oninput="searchMaterial()">
+<input id="search" placeholder="Search Subject, Topic or Material..." oninput="renderMaterials()">
 </section>
 
 <main class="container">
-<h2 class="section" id="subjects">📚 Our Subjects</h2>
-<div class="grid">
-<div class="card"><h3>📖 MP GK</h3><p>Madhya Pradesh General Knowledge</p></div>
-<div class="card"><h3>🔢 Mathematics</h3><p>Maths Notes & Classes</p></div>
-<div class="card"><h3>🧠 Reasoning</h3><p>Reasoning Topics</p></div>
-<div class="card"><h3>✍️ Hindi</h3><p>Hindi Study Material</p></div>
-<div class="card"><h3>🌍 General GK</h3><p>General Knowledge</p></div>
-<div class="card"><h3>📚 Science</h3><p>Science Notes & Classes</p></div>
+<div id="message" class="hidden"></div>
+
+<h2 id="subjects">📚 Our Subjects</h2>
+<div id="subjectsList" class="grid">Loading subjects...</div>
+
+<h2 id="materials">📂 Study Materials</h2>
+<div class="panel">
+<label>Select Subject</label>
+<select id="filterSubject" onchange="loadTopicsForFilter()">
+<option value="">All Subjects</option>
+</select>
+<select id="filterTopic" onchange="renderMaterials()">
+<option value="">All Topics</option>
+</select>
+</div>
+<div id="materialsList">Loading materials...</div>
+
+<h2 id="admin">🔐 Admin Panel</h2>
+<div class="panel" id="loginPanel">
+<h3>Admin Login</h3>
+<input type="email" id="email" placeholder="Admin Email">
+<input type="password" id="password" placeholder="Password">
+<button onclick="login()">Login</button>
 </div>
 
-<h2 class="section" id="materials" style="margin-top:35px">📂 Study Materials</h2>
-<div id="materialsList">
-<div class="material"><div><b>MP GK - Introduction</b><p>Notes and Study Material</p></div><span>Coming Soon</span></div>
-<div class="material"><div><b>Mathematics - Number System</b><p>Notes and Study Material</p></div><span>Coming Soon</span></div>
-<div class="material"><div><b>Reasoning - Introduction</b><p>Notes and Study Material</p></div><span>Coming Soon</span></div>
+<div class="panel hidden" id="adminPanel">
+<h3>Welcome Admin</h3>
+<button onclick="logout()">Logout</button>
+
+<hr>
+<h3>➕ Add Subject</h3>
+<input id="subjectName" placeholder="Subject Name">
+<textarea id="subjectDesc" placeholder="Description"></textarea>
+<button onclick="addSubject()">Add Subject</button>
+
+<hr>
+<h3>➕ Add Topic</h3>
+<select id="topicSubject"></select>
+<input id="topicName" placeholder="Topic Name">
+<textarea id="topicDesc" placeholder="Description"></textarea>
+<button onclick="addTopic()">Add Topic</button>
+
+<hr>
+<h3>➕ Add Study Material</h3>
+<select id="materialSubject" onchange="loadTopicsForAdmin()"></select>
+<select id="materialTopic"></select>
+<input id="materialTitle" placeholder="Material Title">
+<textarea id="materialDesc" placeholder="Description"></textarea>
+<select id="materialType" onchange="changeMaterialType()">
+<option value="pdf">PDF File</option>
+<option value="video">Video Link</option>
+<option value="link">Other Link</option>
+</select>
+<div id="pdfBox">
+<label>Select PDF File</label>
+<input type="file" id="pdfFile" accept=".pdf,application/pdf">
 </div>
+<div id="linkBox" class="hidden">
+<input id="materialUrl" type="url" placeholder="Paste Video or Website Link">
+</div>
+<button onclick="addMaterial()">Save Material</button>
+</div>
+
+<h2 class="hidden" id="manageHeading">🛠 Manage Materials</h2>
+<div id="manageList"></div>
 </main>
 
 <footer>
@@ -72,12 +123,266 @@ footer{background:#111827;color:white;text-align:center;padding:22px;margin-top:
 </footer>
 
 <script>
-function searchMaterial(){
-const q=document.getElementById('search').value.toLowerCase();
-document.querySelectorAll('.material').forEach(item=>{
-item.style.display=item.innerText.toLowerCase().includes(q)?'flex':'none';
-});
+const SUPABASE_URL = "https://gxlndgmaxbllbbhszuos.supabase.co";
+const SUPABASE_KEY = "sb_publishable_4b5UtAD7a_6s3puDZKiCXQ_1kbe2_F2";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let subjects = [];
+let topics = [];
+let materials = [];
+let isAdmin = false;
+
+function message(text, error=false){
+ const box=document.getElementById("message");
+ box.textContent=text;
+ box.style.background=error?"#fee2e2":"#dcfce7";
+ box.classList.remove("hidden");
+ window.scrollTo({top:0,behavior:"smooth"});
 }
+
+async function loadData(){
+ const [s,t,m]=await Promise.all([
+  db.from("subjects").select("*").eq("is_published",true).order("id"),
+  db.from("topics").select("*").eq("is_published",true).order("id"),
+  db.from("materials").select("*").eq("is_published",true).order("id")
+ ]);
+ if(s.error||t.error||m.error){
+  message("Data load error: "+(s.error?.message||t.error?.message||m.error?.message),true);
+  return;
+ }
+ subjects=s.data||[];
+ topics=t.data||[];
+ materials=m.data||[];
+ renderSubjects();
+ fillSelects();
+ renderMaterials();
+ if(isAdmin) renderManage();
+}
+
+function renderSubjects(){
+ const box=document.getElementById("subjectsList");
+ box.innerHTML="";
+ if(!subjects.length){box.innerHTML="<p>No subjects added yet.</p>";return;}
+ subjects.forEach(s=>{
+  const div=document.createElement("div");
+  div.className="card";
+  const h=document.createElement("h3");
+  h.textContent="📘 "+s.name;
+  const p=document.createElement("p");
+  p.textContent=s.description||"Study Material";
+  div.append(h,p);
+  box.appendChild(div);
+ });
+}
+
+function fillSelects(){
+ const options='<option value="">Select Subject</option>'+
+ subjects.map(s=>`<option value="${s.id}">${escapeHTML(s.name)}</option>`).join("");
+ document.getElementById("topicSubject").innerHTML=options;
+ document.getElementById("materialSubject").innerHTML=options;
+ document.getElementById("filterSubject").innerHTML=
+ '<option value="">All Subjects</option>'+
+ subjects.map(s=>`<option value="${s.id}">${escapeHTML(s.name)}</option>`).join("");
+ loadTopicsForAdmin();
+ loadTopicsForFilter();
+}
+
+function escapeHTML(value){
+ return String(value??"").replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ })[c]);
+}
+
+function loadTopicsForAdmin(){
+ const sid=document.getElementById("materialSubject").value;
+ const list=topics.filter(t=>String(t.subject_id)===String(sid));
+ document.getElementById("materialTopic").innerHTML=
+ '<option value="">Select Topic</option>'+
+ list.map(t=>`<option value="${t.id}">${escapeHTML(t.name)}</option>`).join("");
+}
+
+function loadTopicsForFilter(){
+ const sid=document.getElementById("filterSubject").value;
+ const list=sid?topics.filter(t=>String(t.subject_id)===String(sid)):topics;
+ document.getElementById("filterTopic").innerHTML=
+ '<option value="">All Topics</option>'+
+ list.map(t=>`<option value="${t.id}">${escapeHTML(t.name)}</option>`).join("");
+ renderMaterials();
+}
+
+function renderMaterials(){
+ const q=document.getElementById("search").value.toLowerCase();
+ const sid=document.getElementById("filterSubject").value;
+ const tid=document.getElementById("filterTopic").value;
+ const box=document.getElementById("materialsList");
+ box.innerHTML="";
+ const filtered=materials.filter(m=>{
+  const topic=topics.find(t=>t.id===m.topic_id);
+  const subject=topic&&subjects.find(s=>s.id===topic.subject_id);
+  const text=[m.title,m.description,topic?.name,subject?.name].join(" ").toLowerCase();
+  return text.includes(q)&&(!tid||String(m.topic_id)===String(tid))&&
+   (!sid||String(topic?.subject_id)===String(sid));
+ });
+ if(!filtered.length){box.innerHTML="<p>No study materials found.</p>";return;}
+ filtered.forEach(m=>{
+  const div=document.createElement("div");
+  div.className="material";
+  const info=document.createElement("div");
+  const title=document.createElement("b");
+  title.textContent=m.title;
+  const desc=document.createElement("p");
+  desc.className="small";
+  const topic=topics.find(t=>t.id===m.topic_id);
+  desc.textContent=(topic?topic.name+" • ":"")+(m.description||m.material_type);
+  info.append(title,desc);
+  const link=document.createElement("a");
+  link.href=m.file_url||"#";
+  link.target="_blank";
+  link.rel="noopener";
+  link.textContent=m.material_type==="pdf"?"Open PDF":m.material_type==="video"?"Watch Video":"Open Link";
+  div.append(info,link);
+  box.appendChild(div);
+ });
+}
+
+function changeMaterialType(){
+ const type=document.getElementById("materialType").value;
+ document.getElementById("pdfBox").classList.toggle("hidden",type!=="pdf");
+ document.getElementById("linkBox").classList.toggle("hidden",type==="pdf");
+}
+
+async function login(){
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+ if(!email||!password){message("Email aur password bhariye.",true);return;}
+ const {error}=await db.auth.signInWithPassword({email,password});
+ if(error){message("Login error: "+error.message,true);return;}
+ await checkAdmin();
+}
+
+async function checkAdmin(){
+ const {data:{user}}=await db.auth.getUser();
+ if(!user){showLoggedOut();return;}
+ const {data,error}=await db.from("admins").select("user_id").eq("user_id",user.id).maybeSingle();
+ if(error||!data){
+  await db.auth.signOut();
+  showLoggedOut();
+  message("Is account ko Admin permission nahi mili hai.",true);
+  return;
+ }
+ isAdmin=true;
+ document.getElementById("loginPanel").classList.add("hidden");
+ document.getElementById("adminPanel").classList.remove("hidden");
+ document.getElementById("manageHeading").classList.remove("hidden");
+ await loadData();
+ message("Admin login successful!");
+}
+
+function showLoggedOut(){
+ isAdmin=false;
+ document.getElementById("loginPanel").classList.remove("hidden");
+ document.getElementById("adminPanel").classList.add("hidden");
+ document.getElementById("manageHeading").classList.add("hidden");
+ document.getElementById("manageList").innerHTML="";
+}
+
+async function logout(){
+ await db.auth.signOut();
+ showLoggedOut();
+ message("Logout successful.");
+}
+
+async function addSubject(){
+ const name=document.getElementById("subjectName").value.trim();
+ const description=document.getElementById("subjectDesc").value.trim();
+ if(!name){message("Subject name likhiye.",true);return;}
+ const {error}=await db.from("subjects").insert({name,description});
+ if(error){message(error.message,true);return;}
+ document.getElementById("subjectName").value="";
+ document.getElementById("subjectDesc").value="";
+ await loadData();
+ message("Subject add ho gaya!");
+}
+
+async function addTopic(){
+ const subject_id=document.getElementById("topicSubject").value;
+ const name=document.getElementById("topicName").value.trim();
+ const description=document.getElementById("topicDesc").value.trim();
+ if(!subject_id||!name){message("Subject aur Topic name select/likhiye.",true);return;}
+ const {error}=await db.from("topics").insert({subject_id,name,description});
+ if(error){message(error.message,true);return;}
+ document.getElementById("topicName").value="";
+ document.getElementById("topicDesc").value="";
+ await loadData();
+ message("Topic add ho gaya!");
+}
+
+async function addMaterial(){
+ const topic_id=document.getElementById("materialTopic").value;
+ const title=document.getElementById("materialTitle").value.trim();
+ const description=document.getElementById("materialDesc").value.trim();
+ const type=document.getElementById("materialType").value;
+ if(!topic_id||!title){message("Subject, Topic aur Title bhariye.",true);return;}
+ let file_url="";
+ if(type==="pdf"){
+  const file=document.getElementById("pdfFile").files[0];
+  if(!file){message("PDF file select kijiye.",true);return;}
+  if(file.type!=="application/pdf"){message("Sirf PDF file upload karein.",true);return;}
+  if(file.size>50*1024*1024){message("PDF 50 MB se chhoti honi chahiye.",true);return;}
+  const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+  const path=Date.now()+"_"+safeName;
+  const {error:uploadError}=await db.storage.from("study-material").upload(path,file,{contentType:"application/pdf"});
+  if(uploadError){message("Upload error: "+uploadError.message,true);return;}
+  file_url=db.storage.from("study-material").getPublicUrl(path).data.publicUrl;
+ }else{
+  file_url=document.getElementById("materialUrl").value.trim();
+  if(!file_url){message("Video ya link URL paste kijiye.",true);return;}
+  try{new URL(file_url)}catch(e){message("Valid URL paste kijiye.",true);return;}
+ }
+ const {error}=await db.from("materials").insert({
+  topic_id,title,description,material_type:type,file_url
+ });
+ if(error){message("Material save error: "+error.message,true);return;}
+ document.getElementById("materialTitle").value="";
+ document.getElementById("materialDesc").value="";
+ document.getElementById("materialUrl").value="";
+ document.getElementById("pdfFile").value="";
+ await loadData();
+ message("Study material add ho gaya!");
+}
+
+function renderManage(){
+ const box=document.getElementById("manageList");
+ box.innerHTML="";
+ materials.forEach(m=>{
+  const div=document.createElement("div");
+  div.className="material";
+  const info=document.createElement("span");
+  info.textContent=m.title+" ("+m.material_type+")";
+  const btn=document.createElement("button");
+  btn.textContent="Delete";
+  btn.onclick=()=>deleteMaterial(m.id);
+  div.append(info,btn);
+  box.appendChild(div);
+ });
+}
+
+async function deleteMaterial(id){
+ if(!confirm("Kya aap is material ko delete karna chahte hain?"))return;
+ const {error}=await db.from("materials").delete().eq("id",id);
+ if(error){message(error.message,true);return;}
+ await loadData();
+ message("Material delete ho gaya.");
+}
+
+db.auth.onAuthStateChange((event,session)=>{
+ if(event==="SIGNED_OUT")showLoggedOut();
+});
+(async()=>{
+ await loadData();
+ const {data:{session}}=await db.auth.getSession();
+ if(session)await checkAdmin();
+})();
 </script>
 </body>
 </html>
